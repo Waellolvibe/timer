@@ -36,6 +36,7 @@
   #go {
     display: none; border: 0; border-radius: 999px; padding: 16px 44px;
     font-size: 20px; font-weight: 600; background: #fff; color: #000; text-decoration: none;
+    cursor: pointer;
   }
   #go.show { display: inline-block; }
 </style>
@@ -66,7 +67,6 @@
   arc.style.strokeDasharray = C;
 
   function color(frac) {
-    // frac 1 = bright, 0 = gray. Blend from bright cyan-green to the gray track color.
     var from = [60, 230, 190], to = [90, 90, 100];
     var c = from.map(function (f, i) { return Math.round(to[i] + (f - to[i]) * frac); });
     return "rgb(" + c.join(",") + ")";
@@ -102,7 +102,12 @@
     timer = setInterval(tick, 100);
   }
 
-  // Leaving the page (switching apps, locking the phone) restarts the countdown.
+  go.addEventListener("click", function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText("unlocked").catch(function () {});
+    }
+  });
+
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       clearInterval(timer);
