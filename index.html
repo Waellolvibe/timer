@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wait</title>
+<style>
+  :root {
+    --bg: #0b0b10;
+    --track: #2a2a33;
+    --text: #ffffff;
+    --muted: #8d8d99;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 40px;
+    padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+    -webkit-user-select: none; user-select: none;
+  }
+  .wrap { position: relative; width: min(78vw, 320px); aspect-ratio: 1; }
+  svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  circle { fill: none; stroke-width: 14; stroke-linecap: round; }
+  .track { stroke: var(--track); }
+  #arc { transition: stroke 0.3s linear; }
+  #num {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 25vw; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 420px) { #num { font-size: 100px; } }
+  #msg { color: var(--muted); font-size: 17px; text-align: center; min-height: 24px; }
+  #go {
+    display: none; border: 0; border-radius: 999px; padding: 16px 44px;
+    font-size: 20px; font-weight: 600; background: #fff; color: #000; text-decoration: none;
+  }
+  #go.show { display: inline-block; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="track" cx="100" cy="100" r="90"></circle>
+      <circle id="arc" cx="100" cy="100" r="90"></circle>
+    </svg>
+    <div id="num">30</div>
+  </div>
+  <div id="msg">Take a breath.</div>
+  <a id="go" href="shortcuts://run-shortcut?name=Unlock">Continue</a>
+
+<script>
+(function () {
+  var TOTAL = 30;
+  var R = 90;
+  var C = 2 * Math.PI * R;
+  var arc = document.getElementById("arc");
+  var num = document.getElementById("num");
+  var msg = document.getElementById("msg");
+  var go = document.getElementById("go");
+  var startTime = null;
+  var timer = null;
+
+  arc.style.strokeDasharray = C;
+
+  function color(frac) {
+    // frac 1 = bright, 0 = gray. Blend from bright cyan-green to the gray track color.
+    var from = [60, 230, 190], to = [90, 90, 100];
+    var c = from.map(function (f, i) { return Math.round(to[i] + (f - to[i]) * frac); });
+    return "rgb(" + c.join(",") + ")";
+  }
+
+  function draw(remaining) {
+    var frac = Math.max(0, Math.min(1, remaining / TOTAL));
+    arc.style.strokeDashoffset = C * (1 - frac);
+    arc.style.stroke = color(frac);
+    num.textContent = Math.ceil(remaining);
+  }
+
+  function tick() {
+    var elapsed = (Date.now() - startTime) / 1000;
+    var remaining = TOTAL - elapsed;
+    if (remaining <= 0) {
+      draw(0);
+      num.textContent = "0";
+      clearInterval(timer);
+      msg.textContent = "Done. Still want to open it?";
+      go.classList.add("show");
+      return;
+    }
+    draw(remaining);
+  }
+
+  function start() {
+    clearInterval(timer);
+    go.classList.remove("show");
+    msg.textContent = "Take a breath.";
+    startTime = Date.now();
+    draw(TOTAL);
+    timer = setInterval(tick, 100);
+  }
+
+  // Leaving the page (switching apps, locking the phone) restarts the countdown.
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      clearInterval(timer);
+      go.classList.remove("show");
+    } else {
+      start();
+    }
+  });
+  window.addEventListener("pageshow", start);
+
+  start();
+})();
+</script>
+</body>
+</html>
